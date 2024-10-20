@@ -113,14 +113,15 @@ table(imputed_data_discretized$Deep.sleep.percentage)
 table(imputed_data_discretized$Light.sleep.percentage)
 
 # Fit Bayesian Network
-original_bn_df <- data.frame(imputed_data_filtered)
-original_bn_df <- original_bn_df %>% select(-ID)
-head(bn_df)
-
-# Visualize Model
-original_bn <- hc(original_bn_df)
-plot(original_bn)
+bn_1_df <- data.frame(imputed_data_filtered)
+bn_1_df <- bn_1_df %>% select(-ID)
+bn_1 <- hc(bn_1_df)
+plot(bn_1)
 
 # Evaluate Model
-bic_score_original_bn <- score(original_bn, data = original_bn_df, type = "bic")
-print(paste("BIC Score:", bic_score_original_bn))
+bic_score_bn_1 <- score(bn_1, data = original_bn_df, type = "bic")
+print(paste("BIC Score:", bic_score_bn_1))
+
+
+
+
