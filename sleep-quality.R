@@ -1,5 +1,6 @@
 setwd("/Users/henry/Desktop/Virginia Tech/2024 FALL/2024 Fall Lectures/Emerging topics in CS/Projects/sleep-quality")
 
+
 # Import Libraries
 library(bnlearn) # bnlearn
 library(ggplot2) # visualization
@@ -13,66 +14,67 @@ summary(data)
 View(data)
 head(data)
 
+
 # Preprocessing
-## Feature encoding
-### Age
+# Age
 data$Age <- as.factor(data$Age)
 
-### Gender
+# Gender
 data$Gender <- as.factor(data$Gender)
 
-### Bedtime
+# Bedtime
 data$Bedtime <- ymd_hms(data$Bedtime)
 data$Bedtime <- format(data$Bedtime, "%H:%M")
 data$Bedtime <- as.factor(data$Bedtime)
 
-### Wakeup.time
+# Wakeup.time
 data$Wakeup.time <- ymd_hms(data$Wakeup.time)
 data$Wakeup.time <- format(data$Wakeup.time, "%H:%M")
 data$Wakeup.time <- as.factor(data$Wakeup.time)
 
-### Sleep duration
+# Sleep duration
 data$Sleep.duration <- as.factor(data$Sleep.duration)
 
-### Sleep efficiency
+# Sleep efficiency
 data$Sleep.efficiency <- as.numeric(data$Sleep.efficiency)
 
-### Rem sleep percentage
+# Rem sleep percentage
 data$REM.sleep.percentage <- as.numeric(data$REM.sleep.percentage)
 
-### Deep sleep percentage
+# Deep sleep percentage
 data$Deep.sleep.percentage <- as.numeric(data$Deep.sleep.percentage)
 
-### Light sleep percentage
+# Light sleep percentage
 data$Light.sleep.percentage <- as.numeric(data$Light.sleep.percentage)
 
-### Awakenings
+# Awakenings
 data$Awakenings <- as.factor(data$Awakenings)
 
-### Caffein.consumption
-data$Caffeine.consumption <- as.numeric(data$Caffeine.consumption)
+# Caffein.consumption
+data$Caffeine.consumption <- factor(data$Caffeine.consumption)
 
-### Alcohol.consumption
-data$Alcohol.consumption <- as.numeric(data$Alcohol.consumption)
+# Alcohol.consumption
+data$Alcohol.consumption <- factor(data$Alcohol.consumption)
 
-### Smoking.status
+# Smoking.status
 data$Smoking.status <- as.factor(data$Smoking.status)
 
-### Exercise.frequency
-data$Exercise.frequency <- as.numeric(data$Exercise.frequency)
+# Exercise.frequency
+data$Exercise.frequency <- as.factor(data$Exercise.frequency)
 
-## Missing Values
+
+# Missing Values
 na_counts <- colSums(is.na(data))
 na_counts[na_counts > 0]
 
-### Use kNN for imputation
-### Awakenings : 20
-### Caffeine.consumption : 25
-### Alcohol.consumption : 14
-### Exercise.frequency : 6
+# Use kNN for imputation
+# Awakenings : 20
+# Caffeine.consumption : 25
+# Alcohol.consumption : 14
+# Exercise.frequency : 6
 imputed_data <- kNN(data)
 
-### changed data
+# changed data
 awakenings_imputed <- imputed_data[imputed_data$Awakenings_imp == TRUE, "Awakenings"]
 caffeine_imputed <- imputed_data[imputed_data$Caffeine.consumption_imp == TRUE, "Caffeine.consumption"]
 alcohol_imputed <- imputed_data[imputed_data$Alcohol.consumption_imp == TRUE, "Alcohol.consumption"]
@@ -81,7 +83,7 @@ exercise_imputed <- imputed_data[imputed_data$Exercise.frequency_imp == TRUE, "E
 imputed_data_filtered <- imputed_data %>% select(-(16:30))
 any(is.na(imputed_data_filtered))
 
-### Plot to compare
+# Plot to compare Original and Imputed
 imputed_columns <- c("Awakenings", "Caffeine.consumption", "Alcohol.consumption", "Exercise.frequency")
 
 for (col in imputed_columns) {
@@ -97,9 +99,28 @@ for (col in imputed_columns) {
   print(p)
 }
 
+# Discretize continuous variables
+continuous_vars <- c("Sleep.efficiency", "REM.sleep.percentage", "Deep.sleep.percentage", "Light.sleep.percentage")
+imputed_data_discretized <- discretize(imputed_data_filtered, method = "hartemink", breaks = 3, ordered = TRUE, data = imputed_data_filtered[, continuous_vars])
+head(imputed_data_discretized)
 
-bn_df <- data.frame(imputed_data_filtered)
-bn_df <- bn_df %>% select(-ID)
+imputed_data_filtered[, continuous_vars] <- imputed_data_discretized
+head(imputed_data_filtered)
+
+table(imputed_data_discretized$Sleep.efficiency)
+table(imputed_data_discretized$REM.sleep.percentage)
+table(imputed_data_discretized$Deep.sleep.percentage)
+table(imputed_data_discretized$Light.sleep.percentage)
+
+# Fit Bayesian Network
+original_bn_df <- data.frame(imputed_data_filtered)
+original_bn_df <- original_bn_df %>% select(-ID)
 head(bn_df)
-res <- hc(bn_df)
-plot(res)
+
+# Visualize Model
+original_bn <- hc(original_bn_df)
+plot(original_bn)
+
+# Evaluate Model
+bic_score_original_bn <- score(original_bn, data = original_bn_df, type = "bic")
+print(paste("BIC Score:", bic_score_original_bn))
