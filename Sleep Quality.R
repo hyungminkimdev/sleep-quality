@@ -64,9 +64,9 @@ na_counts[na_counts > 0]
 
 
 # Fit BN1
-bn_1_df <- data.frame(data_1)
-bn_1_df <- bn_1_df %>% select(-User.ID)
-bn_1 <- hc(bn_1_df)
+data_1_df <- data.frame(data_1)
+data_1_df <- data_1_df %>% select(-User.ID)
+bn_1 <- hc(data_1_df)
 plot(bn_1)
 graphviz.plot(bn_1, layout = "dot")
 
@@ -83,9 +83,9 @@ data_2 <- data_2 %>% select(-Age)
 data_2$Age.group <- as.factor(data_2$Age.group)
 
 # Fit BN2
-bn_2_df <- data.frame(data_2)
-bn_2_df <- bn_2_df %>% select(-User.ID)
-bn_2 <- hc(bn_2_df)
+data_2_df <- data.frame(data_2)
+data_2_df <- data_2_df %>% select(-User.ID)
+bn_2 <- hc(data_2_df)
 plot(bn_2)
 graphviz.plot(bn_2, layout = "dot")
 
@@ -115,9 +115,9 @@ data_3$Wake.up.Time <- as.factor(data_3$Wake.up.Time)
 data_3$Sleep.duration.group <- as.factor(data_3$Sleep.duration.group)
 
 # Fit BN3
-bn_3_df <- data.frame(data_3)
-bn_3_df <- bn_3_df %>% select(-User.ID)
-bn_3 <- hc(bn_3_df)
+data_3_df <- data.frame(data_3)
+data_3_df <- data_3_df %>% select(-User.ID)
+bn_3 <- hc(data_3_df)
 plot(bn_3)
 graphviz.plot(bn_3, layout = "dot")
 
@@ -131,9 +131,9 @@ table(data_4_cols_discretized$Calories.Burned)
 data_4[, continuous_vars] <- data_4_cols_discretized
 
 # Fit BN4
-bn_4_df <- data.frame(data_4)
-bn_4_df <- bn_4_df %>% select(-User.ID)
-bn_4 <- hc(bn_4_df)
+data_4_df <- data.frame(data_4)
+data_4_df <- data_4_df %>% select(-User.ID)
+bn_4 <- hc(data_4_df)
 plot(bn_4)
 graphviz.plot(bn_4, layout = "dot")
 
@@ -147,20 +147,19 @@ data_5 <- data_5 %>% mutate(Sleep.Quality.Rating = cut(Sleep.Quality,
 data_5 <- data_5 %>% select(-Sleep.Quality)
 
 # Fit BN5
-bn_5_df <- data.frame(data_5)
-bn_5_df <- bn_5_df %>% select(-User.ID)
-bn_5 <- hc(bn_5_df)
+data_5_df <- data.frame(data_5)
+data_5_df <- data_5_df %>% select(-User.ID)
+bn_5 <- hc(data_5_df)
 plot(bn_5)
 graphviz.plot(bn_5, layout = "dot")
 
 
 # Evaluate BN5
-bic_score_bn_5 <- score(bn_5, data = bn_5_df, type = "bic")
+bic_score_bn_5 <- score(bn_5, data = data_5_df, type = "bic")
 print(paste("BIC Score:", bic_score_bn_5))
 
 
 
-# Todolist
 # Add Melatonin
 melatonin_data <- read.csv(file='SocialMediaUsage_SleepLatencyAnalysis_Singapore.csv', header=TRUE, sep=",", na.strings=".")
 
@@ -218,6 +217,13 @@ new_predictions <- predict( object = bn_melatonin_model,
                             method = "bayes-lw")
 data_6$Melatonin.Level.group..pg.mL. <- new_predictions
 
+# Fit BN6
+data_6_df <- data.frame(data_6)
+bn_6 <- hc(data_6_df)
+plot(bn_6)
+graphviz.plot(bn_6, layout = "dot")
+
+
 # Knn for imputation
 data_7 <- kNN(data_6)
 any(is.na(data_7))
@@ -229,28 +235,44 @@ data_7 <- data_7 %>% select(-(14:26))
 # 모델이 충분히 학습되었는지 확인하고, 필요하다면 학습 데이터를 더 많이 확보하거나 다른 변수들을 추가하여 모델을 개선할 수 있습니다.
 
 
+# Fit BN7
+data_7_df <- data.frame(data_7)
+bn_7 <- hc(data_7_df)
+plot(bn_7)
+graphviz.plot(bn_7, layout = "dot")
+
 
 
 
 # Whitelist, Blacklist
+data_8 <- data_7
+
+wl = matrix(c(
+  "Gender","Sleep.Disorders",
+  "Dietary.Habits", "Sleep.Quality.Rating",
+  "Dietary.Habits", "Sleep.duration.group",
+  "Physical.Activity.Level", "Sleep.Quality.Rating",
+  "Wake.up.Time", "Melatonin.Level.group..pg.mL.",
+  "Bedtime", "Melatonin.Level.group..pg.mL.",
+  "Physical.Activity.Level", "Melatonin.Level.group..pg.mL.",
+  "Age.group", "Melatonin.Level.group..pg.mL."
+),,2,byrow=TRUE)
+colnames(wl) <- c("from", "to")
+wl
+
+bl = matrix(c(
+  "Age.group", "Gender"
+),,2,byrow=TRUE)
+colnames(bl) <- c("from", "to")
+bl
+
+# Fit BN7
+data_8_df <- data.frame(data_8)
+bn_8 <- hc(data_8_df, whitelist = wl, blacklist = bl)
+plot(bn_8)
+graphviz.plot(bn_8, layout = "dot")
 
 
-
-
-
-
-# Plot using graphviz
-fitted_bn_2 <- bn.fit(bn_2, data = bn_2_df)
-graphviz.chart(
-  fitted_bn_2,
-  type = "barprob",
-  layout = "fdp",
-  scale = c(30, 30),
-  grid = TRUE,
-  bar.col = "red",
-  strip.bg = "lightskyblue"
-)
-fitted_bn_2
 
 
 
