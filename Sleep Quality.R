@@ -31,7 +31,7 @@ data_1$Age <- as.numeric(data_1$Age)
 data_1$Gender <- as.factor(data_1$Gender)
 
 # Sleep.Quality
-data_1$Sleep.Quality <- as.factor(data_1$Sleep.Quality)
+data_1$Sleep.Quality <- as.numeric(data_1$Sleep.Quality)
 
 # Bedtime
 data_1$Bedtime <- as.factor(data_1$Bedtime)
@@ -101,7 +101,7 @@ data_3 <- data_3 %>% mutate(Bedtime = as.POSIXct(Bedtime, format = "%H:%M"),
 data_3 <- data_3 %>% mutate(Sleep.duration.group = cut(Sleep.duration, 
                                                        breaks = seq(3, 10, by = 0.5), 
                                                        right = FALSE, 
-                                                       labels = paste(seq(3, 8.5, by = 0.5), seq(3.5, 10, by = 0.5), sep = "-")))
+                                                       labels = paste(seq(3, 9.5, by = 0.5), seq(3.5, 10, by = 0.5), sep = "-")))
 data_3 <- data_3 %>% select(-Sleep.duration)
 
 data_3$Wake.up.Time <- ymd_hms(data_3$Wake.up.Time)
@@ -128,23 +128,113 @@ continuous_vars <- c("Daily.Steps", "Calories.Burned")
 data_4_cols_discretized <- discretize(data_4, method = "hartemink", breaks = 3, ordered = TRUE, data = data_4[, continuous_vars])
 table(data_4_cols_discretized$Daily.Steps)
 table(data_4_cols_discretized$Calories.Burned)
-
-temp <- data_4
-temp[, continuous_vars] <- data_4_cols_discretized
-data_4_discretized <- temp
-head(data_4_discretized)
+data_4[, continuous_vars] <- data_4_cols_discretized
 
 # Fit BN4
-bn_4_df <- data.frame(data_4_discretized)
+bn_4_df <- data.frame(data_4)
 bn_4_df <- bn_4_df %>% select(-User.ID)
 bn_4 <- hc(bn_4_df)
 plot(bn_4)
 graphviz.plot(bn_4, layout = "dot")
 
 
-# Evaluate Model
-bic_score_bn_4 <- score(bn_4, data = bn_4_df, type = "bic")
-print(paste("BIC Score:", bic_score_bn_4))
+# Sleep.Quality.Ranking
+data_5 <- data_4
+data_5 <- data_5 %>% mutate(Sleep.Quality.Rating = cut(Sleep.Quality, 
+                                                       breaks = c(0, 2, 4, 6, 8, 10), 
+                                                       labels = c(1, 2, 3, 4, 5), 
+                                                       right = TRUE))
+data_5 <- data_5 %>% select(-Sleep.Quality)
+
+# Fit BN5
+bn_5_df <- data.frame(data_5)
+bn_5_df <- bn_5_df %>% select(-User.ID)
+bn_5 <- hc(bn_5_df)
+plot(bn_5)
+graphviz.plot(bn_5, layout = "dot")
+
+
+# Evaluate BN5
+bic_score_bn_5 <- score(bn_5, data = bn_5_df, type = "bic")
+print(paste("BIC Score:", bic_score_bn_5))
+
+
+
+# Todolist
+# Add Melatonin
+melatonin_data <- read.csv(file='SocialMediaUsage_SleepLatencyAnalysis_Singapore.csv', header=TRUE, sep=",", na.strings=".")
+
+# Age.group
+melatonin_data <- melatonin_data %>% mutate(Age.group = cut(Age, 
+                                                            breaks = seq(0, 100, by = 10), 
+                                                            right = FALSE, 
+                                                            labels = paste(seq(0, 90, by = 10), seq(9, 99, by = 10), sep = "-")))
+table(melatonin_data$Age.group)
+
+# Sleep.duration.group
+melatonin_data <- melatonin_data %>% mutate(Sleep.duration.group = cut(Total.Sleep.Time..hours., 
+                                                                       breaks = seq(3, 10, by = 0.5), 
+                                                                       right = FALSE, 
+                                                                       labels = paste(seq(3, 9.5, by = 0.5), seq(3.5, 10, by = 0.5), sep = "-")))
+table(melatonin_data$Sleep.duration.group)
+
+# Sleep.Quality.Rating
+melatonin_data <- melatonin_data %>% mutate(Sleep.Quality.Rating = cut(Sleep.Quality.Rating, 
+                                                       breaks = c(0, 1, 2, 3, 4, 5), 
+                                                       labels = c(1, 2, 3, 4, 5), 
+                                                       right = TRUE))
+table(melatonin_data$Sleep.Quality.Rating)
+
+# Melatnonin.Level..pg.mL.
+
+melatonin_data <- melatonin_data %>% mutate(Melatonin.Level.group..pg.mL. = cut(Melatonin.Level..pg.mL.,
+                                                                                method = "hartemink",
+                                                                                breaks = 3))
+
+melatonin_data <- melatonin_data %>% mutate(Melatonin.Level.group..pg.mL. = cut(Melatonin.Level..pg.mL.,
+                                                                               breaks = c(-Inf, 22.7, 40.4, Inf),
+                                                                               labels = c("(-Inf, 22.7]", "(22.7, 40.4]", "(40.4, Inf]")))
+table(melatonin_data$Melatonin.Level.group..pg.mL.)
+
+
+
+# Fit Model
+melatonin_subset <- melatonin_data[, c("Age.group", "Sleep.duration.group", "Sleep.Quality.Rating", "Melatonin.Level.group..pg.mL.")]
+data_5_subset <- data_5[, c("Age.group", "Sleep.duration.group", "Sleep.Quality.Rating")]
+melatonin_subset$Age.group <- as.factor(melatonin_subset$Age.group)
+melatonin_subset$Sleep.duration.group <- as.factor(melatonin_subset$Sleep.duration.group)
+melatonin_subset$Sleep.Quality.Rating <- as.factor(melatonin_subset$Sleep.Quality.Rating)
+melatonin_subset$Melatonin.Level.group..pg.mL. <- as.factor(melatonin_subset$Melatonin.Level.group..pg.mL.)
+
+bn_melatonin <- hc(melatonin_subset)
+bn_melatonin_model <- bn.fit(bn_melatonin, data = melatonin_subset)
+
+# Infer Melatonin Level using fitted model
+data_6 <- data_5
+data_6 <- data_6 %>% select(-User.ID)
+new_predictions <- predict( object = bn_melatonin_model, 
+                            data = data_6, 
+                            node = "Melatonin.Level.group..pg.mL.", 
+                            method = "bayes-lw")
+data_6$Melatonin.Level.group..pg.mL. <- new_predictions
+
+# Knn for imputation
+data_7 <- kNN(data_6)
+any(is.na(data_7))
+data_7 <- data_7 %>% select(-(14:26))
+
+# 2. 불완전한 학습 모델
+# 모델이 특정 입력 값 조합에 대해 충분히 학습되지 않았거나, 추론에 필요한 변수들이 충분하지 않을 수 있습니다. Bayesian Network는 학습 데이터에 기초한 확률적 모델을 사용하는데, 일부 조합에 대한 학습이 부족하거나 해당 조합에 대한 데이터가 없을 경우 NA를 반환할 수 있습니다. (결측치나, 데이터 형식의 불일치, 데이터 불균형으로 인한 문제는 아님.)
+# 해결 방법:
+# 모델이 충분히 학습되었는지 확인하고, 필요하다면 학습 데이터를 더 많이 확보하거나 다른 변수들을 추가하여 모델을 개선할 수 있습니다.
+
+
+
+
+
+# Whitelist, Blacklist
+
+
 
 
 
@@ -164,54 +254,4 @@ fitted_bn_2
 
 
 
-
-# Todolist
-# Add Melatonin
-melatonin_data <- read.csv(file='SocialMediaUsage_SleepLatencyAnalysis_Singapore.csv', header=TRUE, sep=",", na.strings=".")
-melatonin_subset <- melatonin_data[, c("Age", "Gender", "Total.Sleep.Time..hours.", "Number.of.Awakenings..during.sleep.", "Melatonin.Level..pg.mL.")]
-colnames(melatonin_subset) <- c("Age", "Gender", "Total_Sleep_Time", "Awakenings", "Melatonin_Level")
-
-data_1_subset <- data_1_discretized[, c("Age", "Gender", "Sleep.duration", "Awakenings")]
-colnames(data_1_subset) <- c("Age", "Gender", "Total_Sleep_Time", "Awakenings")
-
-melatonin_continuous_vars <- c("Total_Sleep_Time", "Melatonin_Level")
-melatonin_subset_cols_discretized <- discretize(melatonin_subset, method = "hartemink", breaks = 3, ordered = TRUE, data = melatonin_subset[, melatonin_continuous_vars])
-table(melatonin_subset_cols_discretized$Total_Sleep_Time)
-table(melatonin_subset_cols_discretized$Melatonin_Level)
-
-temp <- melatonin_subset
-temp[, melatonin_continuous_vars] <- melatonin_subset_cols_discretized
-melatonin_subset_discretized <- temp
-
-bn_melatonin_subset <- melatonin_subset_discretized[, c("Age", "Gender", "Total_Sleep_Time", "Awakenings", "Melatonin_Level")]
-bn_melatonin_subset$Age <- as.factor(bn_melatonin_subset$Age)
-bn_melatonin_subset$Gender <- as.factor(bn_melatonin_subset$Gender)
-bn_melatonin_subset$Total_Sleep_Time <- as.factor(bn_melatonin_subset$Total_Sleep_Time)
-bn_melatonin_subset$Awakenings <- as.factor(bn_melatonin_subset$Awakenings)
-bn_melatonin_subset$Melatonin_Level <- as.factor(bn_melatonin_subset$Melatonin_Level)
-
-bn_melatonin <- hc(bn_melatonin_subset)
-bn_melatonin_model <- bn.fit(bn_melatonin, data = bn_melatonin_subset)
-
-new_data <- data_1_discretized[, c("Age", "Gender", "Sleep.duration", "Awakenings")]
-colnames(new_data) <- c("Age", "Gender", "Total_Sleep_Time", "Awakenings")
-
-
-levels(new_data$Total_Sleep_Time)
-levels(melatonin_subset_discretized$Total_Sleep_Time)
-
-data_1_discretized$Sleep.duration <- cut(as.numeric(data_1_discretized$Sleep.duration), breaks = 3, labels = levels(melatonin_subset_discretized$Total_Sleep_Time))
-data_1_discretized$Awakenings <- cut(as.numeric(data_1_discretized$Awakenings), breaks = 3, labels = levels(melatonin_subset_discretized$Awakenings))
-
-summary(new_data)
-summary(bn_melatonin_subset)
-
-
-
-new_data$Inferred.melatonin.level <- predict(bn_melatonin_model, newdata = new_data)
-data_1_discretized$Inferred.melatonin.level <- new_data$Inferred.melatonin.level
-head(data_1_discretized)
-
-
-# Whitelist, Blacklist
 
