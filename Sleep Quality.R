@@ -16,7 +16,7 @@ library(Rgraphviz) # rgraphviz
 library(gRain)
 
 
-original_data <- read.csv(file='Sleep_Efficiency.csv', header=TRUE, sep=",", na.strings=".")
+original_data <- read.csv(file='Health_Sleep_Statistics.csv', header=TRUE, sep=",", na.strings=".")
 data_1 <- original_data
 summary(data_1)
 # View(data_1)
@@ -25,23 +25,26 @@ head(data_1)
 
 # Preprocessing
 # Age
-data_1$Age <- as.factor(data_1$Age)
+data_1$Age <- as.numeric(data_1$Age)
 
 # Gender
 data_1$Gender <- as.factor(data_1$Gender)
 
+# Sleep.Quality
+data_1$Sleep.Quality <- as.factor(data_1$Sleep.Quality)
+
 # Bedtime
-data_1$Bedtime <- ymd_hms(data_1$Bedtime)
-data_1$Bedtime <- format(data_1$Bedtime, "%H:%M")
 data_1$Bedtime <- as.factor(data_1$Bedtime)
 
-# Wakeup.time
-data_1$Wakeup.time <- ymd_hms(data_1$Wakeup.time)
-data_1$Wakeup.time <- format(data_1$Wakeup.time, "%H:%M")
-data_1$Wakeup.time <- as.factor(data_1$Wakeup.time)
+# Wake.up.Time
+data_1$Wake.up.Time <- as.factor(data_1$Wake.up.Time)
 
-# Sleep duration
-data_1$Sleep.duration <- as.factor(data_1$Sleep.duration)
+# Daily Steps
+data_1$Daily.Steps <- as.factor()
+
+
+
+
 
 # Sleep efficiency
 data_1$Sleep.efficiency <- as.numeric(data_1$Sleep.efficiency)
@@ -75,37 +78,6 @@ data_1$Exercise.frequency <- as.factor(data_1$Exercise.frequency)
 na_counts <- colSums(is.na(data_1))
 na_counts[na_counts > 0]
 
-# Use kNN for imputation
-# Awakenings : 20
-# Caffeine.consumption : 25
-# Alcohol.consumption : 14
-# Exercise.frequency : 6
-data_1_imputed <- kNN(data_1)
-
-# changed data
-awakenings_imputed <- data_1_imputed[data_1_imputed$Awakenings_imp == TRUE, "Awakenings"]
-caffeine_imputed <- data_1_imputed[data_1_imputed$Caffeine.consumption_imp == TRUE, "Caffeine.consumption"]
-alcohol_imputed <- data_1_imputed[data_1_imputed$Alcohol.consumption_imp == TRUE, "Alcohol.consumption"]
-exercise_imputed <- data_1_imputed[data_1_imputed$Exercise.frequency_imp == TRUE, "Exercise.frequency"]
-
-data_1_filtered <- data_1_imputed %>% select(-(16:30))
-any(is.na(data_1_filtered))
-
-# Plot to compare Original and Imputed
-imputed_columns <- c("Awakenings", "Caffeine.consumption", "Alcohol.consumption", "Exercise.frequency")
-
-for (col in imputed_columns) {
-  original_data_long <- data.frame(Value = original_data[[col]], Dataset = "Original")
-  data_1_filtered_long <- data.frame(Value = data_1_filtered[[col]], Dataset = "Imputed")
-  combined_data <- rbind(original_data_long, data_1_filtered_long)
-  
-  p <- ggplot(combined_data, aes(x = Value, fill = Dataset)) +
-    geom_density(alpha = 0.5) +
-    labs(title = paste(col, ": Original vs Imputed"), x = col, y = "Density") +
-    theme_minimal()
-  
-  print(p)
-}
 
 # Fit BN1
 bn_1_df <- data.frame(data_1_filtered)
@@ -114,7 +86,50 @@ bn_1 <- hc(bn_1_df)
 plot(bn_1)
 graphviz.plot(bn_1, layout = "dot")
 
+
+
+
+
+
 # Discretize continuous variables
+
+# Age
+data_1 <- data_1 %>% mutate(Age.group = cut(Age, 
+                                            breaks = seq(0, 100, by = 10), 
+                                            right = FALSE, 
+                                            labels = paste(seq(0, 90, by = 10), seq(9, 99, by = 10), sep = "-")))
+data_1 <- data_1 %>% select(-Age)
+data_1$Age.group <- as.factor(data_1$Age.group)
+
+# Sleep duration
+data_1 <- data_1 %>% mutate(Bedtime = as.POSIXct(Bedtime, format = "%H:%M"),
+                            Wake.up.Time = as.POSIXct(Wake.up.Time, format = "%H:%M"),
+                            Sleep.duration = ifelse(Wake.up.Time < Bedtime, 
+                                                    as.numeric(difftime(Wake.up.Time + 86400, Bedtime, units = "hours")), 
+                                                    as.numeric(difftime(Wake.up.Time, Bedtime, units = "hours"))))
+
+data_1 <- data_1 %>% mutate(Sleep.duration.group = cut(Sleep.duration, 
+                                                       breaks = seq(3, 10, by = 0.5), 
+                                                       right = FALSE, 
+                                                       labels = paste(seq(3, 8.5, by = 0.5), seq(3.5, 10, by = 0.5), sep = "-")))
+data_1 <- data_1 %>% select(-Sleep.duration)
+
+data_1$Wake.up.Time <- ymd_hms(data_1$Wake.up.Time)
+data_1$Wake.up.Time <- format(data_1$Wake.up.Time, "%H:%M")
+
+data_1$Bedtime <- ymd_hms(data_1$Bedtime)
+data_1$Bedtime <- format(data_1$Bedtime, "%H:%M")
+
+
+data_1$Sleep.duration.group <- as.factor(data_1$Sleep.duration.group)
+
+
+
+
+summary(data_1$Age.group)
+
+
+
 continuous_vars <- c("Sleep.efficiency", "REM.sleep.percentage", "Deep.sleep.percentage", "Light.sleep.percentage")
 data_1_cols_discretized <- discretize(data_1_filtered, method = "hartemink", breaks = 3, ordered = TRUE, data = data_1_filtered[, continuous_vars])
 head(data_1_cols_discretized)
