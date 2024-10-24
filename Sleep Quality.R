@@ -23,6 +23,11 @@ library(caret) # Effectiveness
 library(pdp) # Sensitivity Analysis
 
 original_data <- read.csv(file='Health_Sleep_Statistics.csv', header=TRUE, sep=",", na.strings=".")
+
+
+##########               bn_1                  ##########
+##########           Initial BN                ##########
+
 data_1 <- original_data
 summary(data_1)
 # View(data_1)
@@ -112,8 +117,6 @@ ggplot(nmi_melted_data_1, aes(Var1, Var2, fill = NMI)) +
   labs(title = "Initial Pairwise Normalized Mutual Information (NMI) Table")
 
 
-
-
 # Fit BN1
 data_1_df <- data.frame(data_1)
 data_1_df <- data_1_df %>% select(-User.ID)
@@ -122,7 +125,13 @@ plot(bn_1)
 graphviz.plot(bn_1, layout = "dot", fontsize = 20)
 
 
-# Discretize continuous variables
+##########             bn_2 ~ bn_5             ##########
+##########  : Discretize continuous variables  ##########
+
+
+##########               bn_2                  ##########
+##########                Age                  ##########
+
 # Age
 data_2 <- data_1
 data_2 <- data_2 %>% mutate(Age.group = cut(Age, 
@@ -140,7 +149,10 @@ plot(bn_2)
 graphviz.plot(bn_2, layout = "dot")
 
 
-# Sleep duration
+
+##########               bn_3                  ##########
+##########             Sleep duration          ##########
+
 data_3 <- data_2
 data_3 <- data_3 %>% mutate(Bedtime = as.POSIXct(Bedtime, format = "%H:%M"),
                             Wake.up.Time = as.POSIXct(Wake.up.Time, format = "%H:%M"),
@@ -171,8 +183,9 @@ bn_3 <- hc(data_3_df)
 plot(bn_3)
 graphviz.plot(bn_3, layout = "dot")
 
+##########               bn_4                  ##########
+##########   Daily.Steps and Calories.Burned   ##########
 
-# Daily.Steps and Calories.Burned
 data_4 <- data_3
 continuous_vars <- c("Daily.Steps", "Calories.Burned")
 data_4_cols_discretized <- discretize(data_4, method = "hartemink", breaks = 3, ordered = TRUE, data = data_4[, continuous_vars])
@@ -188,7 +201,9 @@ plot(bn_4)
 graphviz.plot(bn_4, layout = "dot")
 
 
-# Sleep.Quality.Ranking
+##########               bn_3                  ##########
+##########        Sleep.Quality.Ranking        ##########
+
 data_5 <- data_4
 data_5 <- data_5 %>% mutate(Sleep.Quality.Rating = cut(Sleep.Quality, 
                                                        breaks = c(0, 2, 4, 6, 8, 10), 
@@ -204,10 +219,11 @@ plot(bn_5)
 graphviz.plot(bn_5, layout = "dot", fontsize = 30)
 
 
-# Evaluate BN5
+# Evaluate BIC Score for BN5
 bic_score_bn_5 <- score(bn_5, data = data_5_df, type = "bic")
 print(paste("BIC Score:", bic_score_bn_5))
-
+aic_score_bn_5 <- score(bn_5, data = data_5_df, type = "aic")
+print(paste("AIC Score:", aic_score_bn_5))
 
 
 # Add Melatonin
@@ -258,7 +274,10 @@ melatonin_subset$Melatonin.Level.group..pg.mL. <- as.factor(melatonin_subset$Mel
 bn_melatonin <- hc(melatonin_subset)
 bn_melatonin_model <- bn.fit(bn_melatonin, data = melatonin_subset)
 
-# Infer Melatonin Level using fitted model
+
+##########                  bn_6                    ##########
+########## Infer Melatonin Level using fitted model ##########
+
 data_6 <- data_5
 data_6 <- data_6 %>% select(-User.ID)
 new_predictions <- predict( object = bn_melatonin_model, 
@@ -275,8 +294,9 @@ bn_6 <- hc(data_6_df)
 plot(bn_6)
 graphviz.plot(bn_6, layout = "dot")
 
-
-# Knn for imputation
+##########                  bn_7                    ##########
+##########            Knn for imputation            ##########
+ 
 data_7 <- kNN(data_6)
 any(is.na(data_7))
 data_7 <- data_7 %>% select(-(14:26))
@@ -288,6 +308,16 @@ bn_7 <- hc(data_7_df)
 plot(bn_7)
 graphviz.plot(bn_7, layout = "dot", fontsize = 30)
 
+
+# Evaluate BIC Score for BN7
+bic_score_bn_7 <- score(bn_7, data = data_7_df, type = "bic")
+print(paste("BIC Score:", bic_score_bn_7))
+aic_score_bn_7 <- score(bn_7, data = data_7_df, type = "aic")
+print(paste("AIC Score:", aic_score_bn_7))
+
+
+##########                  bn_8                    ##########
+##########           Whitelist, Blacklist           ##########
 
 # Mutual Information (MI)
 data_8 <- data_7
@@ -338,10 +368,6 @@ ggplot(nmi_melted_data_8, aes(Var1, Var2, fill = NMI)) +
   labs(title = "Pairwise Normalized Mutual Information (NMI) Table")
 
 
-# Save the plot
-# ggsave("mi_heatmap.png", width = 12, height = 10, dpi = 300)
-
-
 # Whitelist, Blacklist
 
 wl = matrix(c(
@@ -368,6 +394,12 @@ data_8_df <- data.frame(data_8)
 bn_8 <- hc(data_8_df, whitelist = wl, blacklist = bl)
 plot(bn_8)
 graphviz.plot(bn_8, layout = "dot", fontsize=40)
+
+# Evaluate BIC Score for BN8
+bic_score_bn_8 <- score(bn_8, data = data_8_df, type = "bic")
+print(paste("BIC Score:", bic_score_bn_8))
+aic_score_bn_8 <- score(bn_8, data = data_8_df, type = "aic")
+print(paste("AIC Score:", aic_score_bn_8))
 
 # Inference Analysis
 # sample data
