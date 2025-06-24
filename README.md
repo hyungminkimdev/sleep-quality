@@ -2,7 +2,7 @@
 
 A comprehensive study using Bayesian Networks to model and predict sleep quality based on various lifestyle, demographic, and physiological factors.
 
-📄 **[Research Paper (PDF)](./CS5590_Counter_Fuzzing_Research_Project_Paper.pdf)**  
+📄 **[Research Paper (PDF)](./Kim_CS5914_P1_Report.pdf)**  
 📊 **[Bayesian Network Graph Screenshot](./images/bn8_graphviz.png)**  
 🖼️ **Figures** (see `/images` folder for all evaluation graphs)
 
