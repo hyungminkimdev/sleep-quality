@@ -128,7 +128,7 @@ This project incorporates findings from multiple academic sources covering:
 
 ## 📖 Full Research Paper
 
-For detailed methodology, mathematical formulations, and comprehensive analysis, please refer to the complete research paper: [https://drive.google.com/file/d/1uDNB0CxEMoHTohl16u369prFSIokR9-W/view?usp=share_link]
+For detailed methodology, mathematical formulations, and comprehensive analysis, please refer to the complete research paper: [Link](https://drive.google.com/file/d/1uDNB0CxEMoHTohl16u369prFSIokR9-W/view?usp=share_link)
 
 ## 🚀 Future Enhancements
 
