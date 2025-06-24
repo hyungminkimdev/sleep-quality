@@ -2,6 +2,10 @@
 
 A comprehensive study using Bayesian Networks to model and predict sleep quality based on various lifestyle, demographic, and physiological factors.
 
+📄 **[Research Paper (PDF)](./CS5590_Counter_Fuzzing_Research_Project_Paper.pdf)**  
+📊 **[Fuzzing Summary Table Screenshot](./results/plots/Results_Summary.png)**  
+🖼️ **Figures** (see `/results/plots` folder for all evaluation graphs)
+
 ## 📋 Project Overview
 
 This project develops a predictive model using Bayesian Networks to analyze the complex relationships between multiple factors that influence sleep quality. By leveraging machine learning techniques and probabilistic modeling, the system provides insights into how various lifestyle choices, demographic factors, and physiological markers affect sleep quality ratings.
