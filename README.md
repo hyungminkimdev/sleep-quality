@@ -81,10 +81,10 @@ This project develops a predictive model using Bayesian Networks to analyze the 
 3. **Demographic Patterns**: Age-related variations in sleep duration and quality
 4. **Interconnected Systems**: Complex web of relationships between physiological and lifestyle factors
 
-<-- Image 1: Initial Bayesian Network Structure -->
-<-- Image 2: Final Optimized Network with Melatonin Integration -->
-<-- Image 3: Mutual Information Heatmap -->
-<-- Image 4: Model Performance Comparison -->
+<img width="682" alt="bn8_graphviz" src="https://github.com/user-attachments/assets/ee5bb15c-cd8c-4c4a-a4c0-b186dd0addc8" />
+<img width="1036" alt="bn_8_nmi" src="https://github.com/user-attachments/assets/b360ed47-b266-4f2f-bf76-e369ac053bf3" />
+<img width="1038" alt="bn_8_mi" src="https://github.com/user-attachments/assets/99f5a4c8-95be-40fc-9980-7b9f7a7c9143" />
+
 
 ## 🛠️ Technical Implementation
 
@@ -128,7 +128,7 @@ This project incorporates findings from multiple academic sources covering:
 
 ## 📖 Full Research Paper
 
-For detailed methodology, mathematical formulations, and comprehensive analysis, please refer to the complete research paper: [Link to project paper - to be added]
+For detailed methodology, mathematical formulations, and comprehensive analysis, please refer to the complete research paper: [https://drive.google.com/file/d/1uDNB0CxEMoHTohl16u369prFSIokR9-W/view?usp=share_link]
 
 ## 🚀 Future Enhancements
 
